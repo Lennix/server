@@ -180,13 +180,13 @@ namespace MaNGOS
 
         inline float CalculateRpDecay(float rpEarning,float RP)
         {
-            float Decay = floor( (0.2f * RP) + 0.5f);
+            float Decay = floor( (0.4f * RP) + 0.5f);
             float Delta = rpEarning - Decay;
             if (Delta < 0) {
                Delta = Delta / 2;
             }
-            if (Delta < -2500) {
-               Delta = -2500;
+            if (Delta < -5000) {
+               Delta = -5000;
             }
             return RP + Delta;
         }
