@@ -658,6 +658,7 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_QUEST_IGNORE_RAID, "Quests.IgnoreRaid", false);
 
+    setConfig(CONFIG_BOOL_VMAP_TOTEM, "vmap.totem", true);
     setConfig(CONFIG_BOOL_DETECT_POS_COLLISION, "DetectPosCollision", true);
 
     setConfig(CONFIG_BOOL_RESTRICTED_LFG_CHANNEL,      "Channel.RestrictedLfg", true);
