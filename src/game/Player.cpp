@@ -476,6 +476,8 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
 
     m_temporaryUnsummonedPetNumber = 0;
 
+    m_lastpetnumber = 0;
+
     ////////////////////Rest System/////////////////////
     time_inn_enter=0;
     inn_trigger_id=0;
