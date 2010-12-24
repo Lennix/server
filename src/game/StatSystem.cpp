@@ -821,7 +821,7 @@ void Pet::UpdateAttackPowerAndDamage(bool ranged)
     Unit* owner = GetOwner();
     if( owner && owner->GetTypeId()==TYPEID_PLAYER)
     {
-        if(getPetType() == HUNTER_PET)                      //hunter pets benefit from owner's attack power
+        if(getPetType() == HUNTER_PET)                      // hunter pets DONT benefit from owner's attack power in 1.12.1
         {
             bonusAP = owner->GetTotalAttackPowerValue(RANGED_ATTACK) * 0.0f;
             SetBonusDamage( int32(owner->GetTotalAttackPowerValue(RANGED_ATTACK) * 0.0f));
