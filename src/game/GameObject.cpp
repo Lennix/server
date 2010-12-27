@@ -930,6 +930,9 @@ void GameObject::Use(Unit* user)
     uint32 spellId = 0;
     bool triggered = false;
 
+    if (InstanceData* mapInstance = GetInstanceData())
+        mapInstance->OnObjectUse(this);
+
     if (user->GetTypeId() == TYPEID_PLAYER && sScriptMgr.OnGameObjectUse((Player*)user, this))
         return;
 
