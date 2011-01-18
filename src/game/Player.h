@@ -2042,6 +2042,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool isAllowedToLoot(Creature* creature);
 
+        bool m_LavaActive;
+        uint32 m_LavaTimer;
+
     protected:
 
         uint32 m_contestedPvPTimer;

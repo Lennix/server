@@ -440,6 +440,9 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     for (int i=0; i<MAX_TIMERS; ++i)
         m_MirrorTimer[i] = DISABLED_MIRROR_TIMER;
 
+    m_LavaActive = false;
+    m_LavaTimer = DISABLED_MIRROR_TIMER;
+
     m_MirrorTimerFlags = UNDERWATER_NONE;
     m_MirrorTimerFlagsLast = UNDERWATER_NONE;
 

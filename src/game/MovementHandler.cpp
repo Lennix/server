@@ -268,6 +268,12 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
     if (opcode == MSG_MOVE_FALL_LAND && plMover && !plMover->IsTaxiFlying())
         plMover->HandleFall(movementInfo);
 
+    // jumping in lava in instances
+    if (opcode == MSG_MOVE_JUMP && plMover && plMover->IsInWater() && (plMover->m_LavaTimer != DISABLED_MIRROR_TIMER))      // start jumping
+        plMover->m_LavaActive = true;
+    if ((opcode == MSG_MOVE_START_SWIM || opcode == MSG_MOVE_FALL_LAND) && plMover && (plMover->m_LavaActive == true))      // end jumping
+        plMover->m_LavaActive = false;
+
     /* process position-change */
     HandleMoverRelocation(movementInfo);
 
