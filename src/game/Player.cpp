@@ -4630,7 +4630,6 @@ static double crit_ratio[MAX_CLASSES][60] = {
 
 float Player::GetMeleeCritFromAgility()
 {
-  
   // Table for base crit values
 	double crit_base[MAX_CLASSES] = 
 	{0.011400, 0.006520, -0.015320, -0.002950, 0.031830, 0.200000, 0.016750, 0.034575, 0.020000, 0.200000, 0.009610};	
@@ -4640,11 +4639,36 @@ float Player::GetMeleeCritFromAgility()
     if (level>GT_MAX_LEVEL) level = GT_MAX_LEVEL;
     	
   return (crit_base[pclass-1] + crit_ratio[pclass-1][level-1]*(GetStat(STAT_AGILITY)-GetCreateStat(STAT_AGILITY)))*100.0f + 5.0f;	 
+/* Stuff from Archaica not applicable
+    // from mangos 3462 for 1.12
+    float val = 0.0f, classrate = 0.0f, LevelFactor = 0.0f, fg = 0.0f;
+
+    // critical
+    switch(getClass())
+    {
+        case CLASS_PALADIN: classrate = 19.77f; break;
+        case CLASS_SHAMAN:  classrate = 19.7f;  break;
+        case CLASS_MAGE:    classrate = 19.44f; break;
+        case CLASS_ROGUE:   classrate = 29.0f;  break;
+        case CLASS_HUNTER:  classrate = 53.0f;  break;      // in 2.0.x = 33
+        case CLASS_PRIEST:
+        case CLASS_WARLOCK:
+        case CLASS_DRUID:
+        case CLASS_WARRIOR:
+        default:            classrate = 20.0f; break;
+    }
+
+    fg = (0.35f*(float)(getLevel())) + 5.55f;
+    LevelFactor = 106.20f / fg - 3;
+    //LevelFactor = 1 for lvl 60 chars
+    val = LevelFactor * (GetStat(STAT_AGILITY)/classrate);
+
+    return val;
+>>>>>>> Crit and dodge formulas*/
 }
 
 float Player::GetDodgeFromAgility()
 {
-
   //Slightly different to the TBC one to make sure lvl 60 characters get the right amount of dodge%
   // (14.5 agi for 1% crit for rogues, 26.5 for hunters, 20 for all other classes)	
     float crit_to_dodge[MAX_CLASSES] = {	
@@ -4661,6 +4685,22 @@ float Player::GetDodgeFromAgility()
          1.00f       // Druid	
     };
 
+/* Stuff from Archaica not applicable
+    // from mangos 3462 for 1.12
+    float val=0,classrate=0,LevelRate=0;
+
+    //dodge
+    //LevelRate = 1 for lvl 60 chars
+    LevelRate = ((16.225f/((0.45f*(float)(getLevel()))+2.5f))-0.1f)/0.45f;
+    if(getClass() == CLASS_HUNTER) classrate = 26.5;
+    else if(getClass() == CLASS_ROGUE)  classrate = 14.5;
+    else classrate = 20;
+    ///*+(Defense*0,04);
+    if (getRace() == RACE_NIGHTELF)
+        val = LevelRate * (GetStat(STAT_AGILITY)/classrate) + 1;
+    else
+        val = LevelRate * (GetStat(STAT_AGILITY)/classrate);
+*/
 
     // Table for base dodge values
     float dodge_base[MAX_CLASSES] = {
