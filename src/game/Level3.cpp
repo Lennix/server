@@ -245,6 +245,14 @@ bool ChatHandler::HandleReloadCreatureQuestInvRelationsCommand(char* /*args*/)
     return true;
 }
 
+bool ChatHandler::HandleReloadCreatureLinkedRespawnCommand(char * /*args*/)
+{
+    sLog.outString("Loading Linked Respawns... (`creature_linked_respawn`)");
+    sObjectMgr.LoadCreatureLinkedRespawn();
+    SendGlobalSysMessage("DB table `creature_linked_respawn` (creature linked respawns) reloaded.");
+    return true;
+}
+
 bool ChatHandler::HandleReloadGossipMenuCommand(char* /*args*/)
 {
     sLog.outString( "Re-Loading `gossip_menu` Table!" );

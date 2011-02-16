@@ -975,6 +975,9 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading Creature Data..." );
     sObjectMgr.LoadCreatures();
 
+    sLog.outString("Loading Creature Linked Respawn...");
+    sObjectMgr.LoadCreatureLinkedRespawn();                     // must be after LoadCreatures()
+
     sLog.outString( "Loading Creature Addon Data..." );
     sLog.outString();
     sObjectMgr.LoadCreatureAddons();                        // must be after LoadCreatureTemplates() and LoadCreatures()

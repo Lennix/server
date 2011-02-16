@@ -651,6 +651,10 @@ class MANGOS_DLL_SPEC Creature : public Unit
         float GetRespawnRadius() const { return m_respawnradius; }
         void SetRespawnRadius(float dist) { m_respawnradius = dist; }
 
+        // Linked Creature Respawning System
+        time_t GetLinkedCreatureRespawnTime() const;
+        const CreatureData* GetLinkedRespawnCreatureData() const;
+
         // Functions spawn/remove creature with DB guid in all loaded map copies (if point grid loaded in map)
         static void AddToRemoveListInMaps(uint32 db_guid, CreatureData const* data);
         static void SpawnInMaps(uint32 db_guid, CreatureData const* data);

@@ -432,42 +432,63 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         {
             if( m_respawnTime <= time(NULL) )
             {
-                DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
-                m_respawnTime = 0;
-                lootForPickPocketed = false;
-                lootForBody         = false;
-                lootForSkin         = false;
+                bool canRespawn = false;
 
-                // Clear possible auras having IsDeathPersistent() attribute
-                RemoveAllAuras();
-
-                if(m_originalEntry != GetEntry())
+                if (!GetLinkedCreatureRespawnTime()) // Can respawn
+                    canRespawn = true;
+                else // the master is dead
                 {
-                    // need preserver gameevent state
-                    GameEventCreatureData const* eventData = sGameEventMgr.GetCreatureUpdateDataForActiveEvent(GetGUIDLow());
-                    UpdateEntry(m_originalEntry, TEAM_NONE, NULL, eventData);
+                    if (uint32 targetGuid = sObjectMgr.GetLinkedRespawnGuid(GetGUIDLow()))
+                    {
+                        if (targetGuid == GetGUIDLow()) // if linking self, never respawn (check delayed to next day)
+                            SetRespawnTime(DAY);
+                        else
+                            m_respawnTime = (time(NULL) > GetLinkedCreatureRespawnTime() ? time(NULL) : GetLinkedCreatureRespawnTime()) + urand(5, MINUTE); // else copy time from master and add a little
+                        SaveRespawnTime(); // also save to DB immediately
+                    }
+                    else
+                        canRespawn = true;
                 }
 
-                CreatureInfo const *cinfo = GetCreatureInfo();
-
-                SelectLevel(cinfo);
-                SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-                if (m_isDeadByDefault)
+                if (canRespawn)
                 {
-                    SetDeathState(JUST_DIED);
-                    SetHealth(0);
-                    i_motionMaster.Clear();
-                    clearUnitState(UNIT_STAT_ALL_STATE);
-                    LoadCreatureAddon(true);
+                    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
+                    m_respawnTime = 0;
+                    lootForPickPocketed = false;
+                    lootForBody         = false;
+                    lootForSkin         = false;
+
+                    // Clear possible auras having IsDeathPersistent() attribute
+                    RemoveAllAuras();
+
+                    if(m_originalEntry != GetEntry())
+                    {
+                        // need preserver gameevent state
+                        GameEventCreatureData const* eventData = sGameEventMgr.GetCreatureUpdateDataForActiveEvent(GetGUIDLow());
+                        UpdateEntry(m_originalEntry);
+                    }
+
+                    CreatureInfo const *cinfo = GetCreatureInfo();
+
+                    SelectLevel(cinfo);
+                    SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
+                    if (m_isDeadByDefault)
+                    {
+                        SetDeathState(JUST_DIED);
+                        SetHealth(0);
+                        i_motionMaster.Clear();
+                        clearUnitState(UNIT_STAT_ALL_STATE);
+                        LoadCreatureAddon(true);
+                    }
+                    else
+                        SetDeathState( JUST_ALIVED );
+
+                    //Call AI respawn virtual function
+                    if (AI())
+                        AI()->JustRespawned();
+
+                    GetMap()->Add(this);
                 }
-                else
-                    SetDeathState( JUST_ALIVED );
-
-                //Call AI respawn virtual function
-                if (AI())
-                    AI()->JustRespawned();
-
-                GetMap()->Add(this);
             }
             break;
         }
@@ -2463,4 +2484,38 @@ void Creature::SetVirtualItemRaw(VirtualItemSlot slot, uint32 display_id, uint32
     SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_DISPLAY + slot, display_id);
     SetUInt32Value(UNIT_VIRTUAL_ITEM_INFO + (slot * 2) + 0, info0);
     SetUInt32Value(UNIT_VIRTUAL_ITEM_INFO + (slot * 2) + 1, info1);
+}
+
+const CreatureData* Creature::GetLinkedRespawnCreatureData() const
+{
+    if (!GetGUIDLow()) // only hard-spawned creatures from DB can have a linked master
+        return NULL;
+
+    if (uint32 targetGuid = sObjectMgr.GetLinkedRespawnGuid(GetGUIDLow()))
+        return sObjectMgr.GetCreatureData(targetGuid);
+
+    return NULL;
+}
+
+// returns master's remaining respawn time if any
+time_t Creature::GetLinkedCreatureRespawnTime() const
+{
+    if (!GetGUIDLow()) // only hard-spawned creatures from DB can have a linked master
+        return 0;
+
+    if (uint32 targetGuid = sObjectMgr.GetLinkedRespawnGuid(GetGUIDLow()))
+    {
+        Map* targetMap = NULL;
+        if (const CreatureData* data = sObjectMgr.GetCreatureData(targetGuid))
+        {
+            if (data->mapid == GetMapId())   // look up on the same map
+                targetMap = GetMap();
+            else                            // it shouldn't be instanceable map here
+                targetMap = sMapMgr.FindMap(data->mapid);
+        }
+        if (targetMap)
+            return targetMap->GetPersistentState()->GetCreatureRespawnTime(targetGuid);
+    }
+
+    return 0;
 }
