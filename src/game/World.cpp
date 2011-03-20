@@ -1120,6 +1120,9 @@ void World::SetInitialWorldSettings()
     sLog.outString();
     sWaypointMgr.Load();
 
+	sLog.outString( "Loading Creature Formations..." );
+    sFormationMgr.LoadCreatureFormations();
+
     ///- Loading localization data
     sLog.outString( "Loading Localization strings..." );
     sObjectMgr.LoadCreatureLocales();                       // must be after CreatureInfo loading

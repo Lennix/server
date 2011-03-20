@@ -39,6 +39,7 @@ class Group;
 class Quest;
 class Player;
 class WorldSession;
+class CreatureGroup;
 
 struct GameEventCreatureData;
 
@@ -701,6 +702,10 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         void SetVirtualItem(VirtualItemSlot slot, uint32 item_id);
         void SetVirtualItemRaw(VirtualItemSlot slot, uint32 display_id, uint32 info0, uint32 info1);
+    
+        void SearchFormation();
+        CreatureGroup* GetFormation() {return m_formation;}
+        void SetFormation(CreatureGroup* formation) {m_formation = formation;}
     protected:
         bool CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team team, const CreatureData *data = NULL, GameEventCreatureData const* eventData =NULL);
         bool InitEntry(uint32 entry, Team team=ALLIANCE, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
@@ -757,6 +762,9 @@ class MANGOS_DLL_SPEC Creature : public Unit
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;
         SplineFlags m_splineFlags;
+
+		// Formation var
+        CreatureGroup* m_formation;
 };
 
 class AssistDelayEvent : public BasicEvent

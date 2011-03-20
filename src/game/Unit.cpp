@@ -50,6 +50,7 @@
 #include "DBCStores.h"
 #include "VMapFactory.h"
 #include "MovementGenerator.h"
+#include "CreatureGroups.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -6350,6 +6351,9 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
         // Some bosses are set into combat with zone
         if (GetMap()->IsDungeon() && (pCreature->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_AGGRO_ZONE) && enemy && enemy->IsControlledByPlayer())
             pCreature->SetInCombatWithZone();
+
+        if (pCreature->GetFormation())
+            pCreature->GetFormation()->MemberAttackStart(pCreature, enemy);
 
         if (InstanceData* mapInstance = GetInstanceData())
             mapInstance->OnCreatureEnterCombat(pCreature);
