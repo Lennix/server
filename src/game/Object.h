@@ -191,6 +191,14 @@ class MANGOS_DLL_SPEC Object
             return m_floatValues[ index ];
         }
 
+        void SetBoundingValue(uint8 t, float v)
+        {
+            if (t == 0)
+                m_floatValues[UNIT_FIELD_COMBATREACH] = v;
+            else if (t == 1)
+                m_floatValues[UNIT_FIELD_BOUNDINGRADIUS] = v;
+        }
+
         uint8 GetByteValue( uint16 index, uint8 offset) const
         {
             MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index , false) );
