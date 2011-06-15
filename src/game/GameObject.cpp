@@ -1380,6 +1380,9 @@ void GameObject::Use(Unit* user)
         }
         case GAMEOBJECT_TYPE_MEETINGSTONE:                  //23
         {
+            // Meeting Stones should not work at patch 1.12.1
+            return;
+
             GameObjectInfo const* info = GetGOInfo();
 
             if (user->GetTypeId() != TYPEID_PLAYER)
