@@ -178,6 +178,7 @@ struct EquipmentInfoRaw
 // from `creature` table
 struct CreatureData
 {
+    explicit CreatureData() : dbData(true) {}
     uint32 id;                                              // entry in creature_template
     uint16 mapid;
     uint32 modelid_override;                                // overrides any model defined in creature_template
@@ -193,6 +194,7 @@ struct CreatureData
     uint32 curmana;
     bool  is_dead;
     uint8 movementType;
+    bool dbData;
 
     // helper function
     ObjectGuid GetObjectGuid(uint32 lowguid) const { return ObjectGuid(CreatureInfo::GetHighGuid(), id, lowguid); }

@@ -41,6 +41,7 @@
 #include "InstanceData.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGroundMgr.h"
+#include "OutdoorPvPMgr.h"
 #include "Spell.h"
 #include "Util.h"
 #include "GridNotifiers.h"
@@ -189,7 +190,12 @@ void Creature::AddToWorld()
 {
     ///- Register the creature for guid lookup
     if (!IsInWorld() && GetObjectGuid().GetHigh() == HIGHGUID_UNIT)
+    {
+        if (m_zoneScript)
+            m_zoneScript->OnCreatureCreate(this, true);
+
         GetMap()->GetObjectsStore().insert<Creature>(GetObjectGuid(), (Creature*)this);
+    }
 
     Unit::AddToWorld();
 }
@@ -198,7 +204,12 @@ void Creature::RemoveFromWorld()
 {
     ///- Remove the creature from the accessor
     if (IsInWorld() && GetObjectGuid().GetHigh() == HIGHGUID_UNIT)
+    {
+        if (m_zoneScript)
+            m_zoneScript->OnCreatureCreate(this, false);
+
         GetMap()->GetObjectsStore().erase<Creature>(GetObjectGuid(), (Creature*)NULL);
+    }
 
     Unit::RemoveFromWorld();
 }
@@ -1203,6 +1214,15 @@ float Creature::GetSpellDamageMod(int32 Rank)
 
 bool Creature::CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team team, const CreatureData *data /*=NULL*/, GameEventCreatureData const* eventData /*=NULL*/)
 {
+    SetZoneScript();
+    if (m_zoneScript && data)
+    {
+        uint32 myEntry = m_zoneScript->GetCreatureEntry(guidlow, data);
+        if (!myEntry)
+            return false;
+        SetEntry(myEntry);
+    }
+
     m_originalEntry = cinfo->Entry;
 
     Object::_Create(guidlow, cinfo->Entry, cinfo->GetHighGuid());

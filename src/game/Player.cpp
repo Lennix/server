@@ -53,6 +53,8 @@
 #include "BattleGround.h"
 #include "BattleGroundAV.h"
 #include "BattleGroundMgr.h"
+#include "OutdoorPvP.h"
+#include "OutdoorPvPMgr.h"
 #include "Chat.h"
 #include "Database/DatabaseImpl.h"
 #include "Spell.h"
@@ -1831,6 +1833,7 @@ void Player::RemoveFromWorld()
         ///- Release charmed creatures, unsummon totems and remove pets/guardians
         UnsummonAllTotems();
         RemoveMiniPet();
+        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
     }
 
     for(int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
@@ -6194,6 +6197,8 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
 
     if(m_zoneUpdateId != newZone)
     {
+        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
+        sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
         SendInitWorldStates(newZone);                       // only if really enters to new zone, not just area change, works strange...
 
         if (sWorld.getConfig(CONFIG_BOOL_WEATHER))
@@ -6303,6 +6308,16 @@ void Player::CheckDuelDistance(time_t currTime)
             DuelComplete(DUEL_FLED);
         }
     }
+}
+
+OutdoorPvP* Player::GetOutdoorPvP() const
+{
+    return sOutdoorPvPMgr.GetOutdoorPvPToZoneId(GetZoneId());
+}
+
+bool Player::IsOutdoorPvPActive()
+{
+    return isAlive() && !HasInvisibilityAura() && !HasStealthAura() && (IsPvP() || sWorld.IsPvPRealm()) && !HasMovementFlag(MOVEFLAG_FLYING) && !IsTaxiFlying();
 }
 
 void Player::DuelComplete(DuelCompleteType type)
@@ -7654,7 +7669,9 @@ void Player::SendInitWorldStates(uint32 zoneid)
 {
     // data depends on zoneid/mapid...
     BattleGround* bg = GetBattleGround();
+    uint16 NumberOfFields = 0;
     uint32 mapid = GetMapId();
+    OutdoorPvP* pvp = sOutdoorPvPMgr.GetOutdoorPvPToZoneId(zoneid);
 
     DEBUG_LOG("Sending SMSG_INIT_WORLD_STATES to Map:%u, Zone: %u", mapid, zoneid);
 
@@ -7691,6 +7708,25 @@ void Player::SendInitWorldStates(uint32 zoneid)
             break;
     }
 
+    switch(zoneid)
+    {
+        case 139:
+            NumberOfFields = 39;
+            break;
+        case 1377:
+            NumberOfFields = 13;
+            break;
+        case 3277:
+            NumberOfFields = 14;
+            break;
+        case 3358:
+            NumberOfFields = 38;
+            break;
+        default:
+            NumberOfFields = 1;
+            break;
+    }
+
     uint32 count = 0;                                       // count of world states in packet
 
     if (defZone)
@@ -7706,11 +7742,11 @@ void Player::SendInitWorldStates(uint32 zoneid)
     }
     else
     {
-        WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+2+6));
+        WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+2+(NumberOfFields*8)));
         data << uint32(mapid);                              // mapid
         data << uint32(zoneid);                             // zone id
         size_t count_pos = data.wpos();
-        data << uint16(0);                                  // count of uint32 blocks, placeholder
+        data << uint16(NumberOfFields);                     // count of uint32 blocks, placeholder
         // common fields
         FillInitialWorldState(data, count, 0x8d8, 0x0);     // 2264 1
         FillInitialWorldState(data, count, 0x8d7, 0x0);     // 2263 2
@@ -7731,12 +7767,33 @@ void Player::SendInitWorldStates(uint32 zoneid)
             case 1537:
             case 2257:
                 break;
-            case 139:                                           // EPL
-                FillInitialWorldState(data,count, EPL_world_states);
-                break;
-            case 1377:                                          // Silithus
-                FillInitialWorldState(data,count, SIL_world_states);
-                break;
+            case 139: // EPL
+            {
+                if (pvp && pvp->GetTypeId() == OUTDOOR_PVP_EP)
+                    pvp->FillInitialWorldStates(data);
+                else
+                    FillInitialWorldState(data,count, EPL_world_states);
+            }
+            break;
+            case 1377: // Silithus
+            {
+                if (pvp && pvp->GetTypeId() == OUTDOOR_PVP_SI)
+                    pvp->FillInitialWorldStates(data);
+                else
+                {
+                    // states are always shown
+                    data << uint32(2313) << uint32(0x0); // 7 ally silityst gathered
+                    data << uint32(2314) << uint32(0x0); // 8 horde silityst gathered
+                    data << uint32(2317) << uint32(0x0); // 9 max silithyst
+                }
+
+                // dunno about these... aq opening event maybe?
+                data << uint32(2322) << uint32(0x0); // 10 sandworm N
+                data << uint32(2323) << uint32(0x0); // 11 sandworm S
+                data << uint32(2324) << uint32(0x0); // 12 sandworm SW
+                data << uint32(2325) << uint32(0x0); // 13 sandworm E
+            }
+            break;
             case 2597:                                          // AV
                 if (bg && bg->GetTypeID() == BATTLEGROUND_AV)
                     bg->FillInitialWorldStates(data, count);
