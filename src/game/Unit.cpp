@@ -489,11 +489,30 @@ void Unit::RemoveSpellbyDamageTaken(AuraType auraType, uint32 damage)
     if(!HasAuraType(auraType))
         return;
 
+    // Spells with SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY should not be removed by dmg
+    bool found = false;
+    AuraList const& mModRoot = GetAurasByType(auraType);
+    for(AuraList::const_iterator itr = mModRoot.begin(); itr != mModRoot.end(); ++itr)
+    {
+        if ((*itr)->GetSpellProto()->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (found)
+        return;
+
+    uint32 dmg_done = damage + GetDamageForAuraType(auraType);
+
     // The chance to dispel an aura depends on the damage taken with respect to the casters level.
     uint32 max_dmg = getLevel() > 8 ? 25 * getLevel() - 150 : 50;
-    float chance = float(damage) / max_dmg * 100.0f;
+    float chance = float(dmg_done) / max_dmg * 100.0f;
     if (roll_chance_f(chance))
         RemoveSpellsCausingAura(auraType);
+    else
+        SetDamageForAuraType(auraType, true, damage);
 }
 
 void Unit::DealDamageMods(Unit *pVictim, uint32 &damage, uint32* absorb)
@@ -1381,9 +1400,17 @@ void Unit::CalculateMeleeDamage(Unit *pVictim, uint32 damage, CalcDamageInfo *da
     // Add melee damage bonus
     damage = MeleeDamageBonusDone(damageInfo->target, damage, damageInfo->attackType);
     damage = damageInfo->target->MeleeDamageBonusTaken(this, damage, damageInfo->attackType);
-    // Calculate armor reduction
-    damageInfo->damage = CalcArmorReducedDamage(damageInfo->target, damage);
-    damageInfo->cleanDamage += damage - damageInfo->damage;
+    // Calculate armor reduction for physical attacks
+    if (damageInfo->damageSchoolMask == SPELL_SCHOOL_MASK_NORMAL)
+    {
+        damageInfo->damage = CalcArmorReducedDamage(damageInfo->target, damage);
+        damageInfo->cleanDamage += damage - damageInfo->damage;
+    }
+        else
+    {
+        damageInfo->damage = damage;
+        damageInfo->cleanDamage += damage;
+    }
 
     damageInfo->hitOutCome = RollMeleeOutcomeAgainst(damageInfo->target, damageInfo->attackType);
 
@@ -1392,6 +1419,16 @@ void Unit::CalculateMeleeDamage(Unit *pVictim, uint32 damage, CalcDamageInfo *da
     {
         if (damageInfo->hitOutCome == MELEE_HIT_PARRY) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
         if (damageInfo->hitOutCome == MELEE_HIT_DODGE) damageInfo->hitOutCome = MELEE_HIT_MISS;
+    }
+
+    // Disable parry, dodge, crushing, block and miss for non-physical attacks
+    if (damageInfo->damageSchoolMask != SPELL_SCHOOL_MASK_NORMAL)
+    {
+        if (damageInfo->hitOutCome == MELEE_HIT_PARRY) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
+        if (damageInfo->hitOutCome == MELEE_HIT_DODGE) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
+        if (damageInfo->hitOutCome == MELEE_HIT_CRUSHING) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
+        if (damageInfo->hitOutCome == MELEE_HIT_BLOCK) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
+        if (damageInfo->hitOutCome == MELEE_HIT_MISS) damageInfo->hitOutCome = MELEE_HIT_NORMAL;
     }
 
     switch(damageInfo->hitOutCome)
@@ -1567,6 +1604,13 @@ void Unit::DealMeleeDamage(CalcDamageInfo *damageInfo, bool durabilityLoss)
 
     if (!pVictim->isAlive() || pVictim->IsTaxiFlying() || (pVictim->GetTypeId() == TYPEID_UNIT && ((Creature*)pVictim)->IsInEvadeMode()))
         return;
+
+    // Do not deal damage to Onyxia, when she is Flying during phase 2
+    if (pVictim->GetEntry() == 10184 && ((Creature*)pVictim)->HasSplineFlag(SPLINEFLAG_FLYING) && damageInfo->damageSchoolMask == SPELL_SCHOOL_MASK_NORMAL)
+    {
+        //error_log("Unit::DealMeleeDamage(): %s %s (guid %d) will do not deal damage to Onyxia, because she is flying.", this->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature", this->GetName(), this->GetObjectGuid());
+        return;
+    }
 
     // Hmmmm dont like this emotes client must by self do all animations
     if (damageInfo->HitInfo&HITINFO_CRITICALHIT)
@@ -2163,7 +2207,7 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst (const Unit *pVictim, WeaponAttack
         int32 maxskill = attackerMaxSkillValueForLevel;
         skill = (skill > maxskill) ? maxskill : skill;
 
-        tmp = (10 + (victimDefenseSkill - skill)) * 100;
+        tmp = (10 + 2*(victimDefenseSkill - skill)) * 100;
         tmp = tmp > 4000 ? 4000 : tmp;
         if (roll < (sum += tmp))
         {
@@ -3333,7 +3377,12 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
         for (SpellAuraHolderMap::iterator iter = spair.first; iter != spair.second; ++iter)
         {
             SpellAuraHolder *foundHolder = iter->second;
-            if (foundHolder->GetCasterGuid() == holder->GetCasterGuid())
+            if (foundHolder->GetCasterGuid() == holder->GetCasterGuid() ||
+                aurSpellInfo->Id == 22959 ||                                    // Improved Scorch
+                aurSpellInfo->Id == 15258 ||                                    // Shadow Weaving
+                aurSpellInfo->Id == 12579 ||                                    // Winter's Chill
+                (aurSpellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR &&
+                aurSpellInfo->SpellFamilyFlags & UI64LIT(0x00000004000)))       // Sunder Armor
             {
                 // Aura can stack on self -> Stack it;
                 if (aurSpellInfo->StackAmount)
@@ -3376,6 +3425,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                     case SPELL_AURA_PERIODIC_MANA_LEECH:
                     case SPELL_AURA_OBS_MOD_MANA:
                     case SPELL_AURA_POWER_BURN_MANA:
+                    case SPELL_AURA_PERIODIC_HEALTH_FUNNEL:
                         break;
                     case SPELL_AURA_PERIODIC_ENERGIZE:      // all or self or clear non-stackable
                     default:                                // not allow
@@ -5187,6 +5237,9 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
     // Magic case
     if (spell && (spell->m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_NONE || spell->m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC))
     {
+        if (spell->m_spellInfo->Attributes & SPELL_ATTR_ABILITY || spell->m_spellInfo->AttributesEx & SPELL_ATTR_EX_CANT_BE_REDIRECTED)
+            return victim;
+
         Unit::AuraList const& magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
         for(Unit::AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
         {
@@ -5503,6 +5556,9 @@ int32 Unit::SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask)
 
 bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType)
 {
+    if (GetObjectGuid().IsCreature())
+        return false;
+
     // not critting spell
     if((spellProto->AttributesEx2 & SPELL_ATTR_EX2_CANT_CRIT))
         return false;
@@ -8386,6 +8442,8 @@ void Unit::SetFeared(bool apply, ObjectGuid casterGuid, uint32 spellID, uint32 t
         }
     }
 
+    SetDamageForAuraType(SPELL_AURA_MOD_FEAR, apply);
+
     if (GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->SetClientControl(this, !apply);
 }
@@ -9043,6 +9101,32 @@ bool Unit::CheckAndIncreaseCastCounter()
 
     ++m_castCounter;
     return true;
+}
+
+uint32 Unit::GetDamageForAuraType(AuraType auraType)
+{
+    DamageForAuraTypeMap::iterator itr = m_DamageForAuraTypes.find(auraType);
+    if (itr != m_DamageForAuraTypes.end())
+        return itr->second;
+
+    return NULL;
+}
+
+void Unit::SetDamageForAuraType(AuraType auraType, bool apply, uint32 damage)
+{
+    if (apply)
+    {
+        DamageForAuraTypeMap::iterator itr = m_DamageForAuraTypes.find(auraType);
+        if (itr == m_DamageForAuraTypes.end())
+        {
+            m_DamageForAuraTypes[auraType] = damage;
+            return;
+        }
+
+        itr->second += damage;
+    }
+    else
+        m_DamageForAuraTypes.erase(auraType);
 }
 
 SpellAuraHolder* Unit::GetSpellAuraHolder (uint32 spellid) const

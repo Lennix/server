@@ -769,6 +769,15 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                     damagePoint = pVictim->SpellDamageBonusTaken(this, dummySpell, damagePoint, SPELL_DIRECT_DAMAGE);
                 }
 
+                // Improved Seal of Righteousness
+                AuraList const& mAddPctModList = GetAurasByType(SPELL_AURA_ADD_PCT_MODIFIER);
+                for(AuraList::const_iterator itr = mAddPctModList.begin(); itr != mAddPctModList.end(); ++itr)
+                {
+                    SpellEntry const* spellInfo = (*itr)->GetSpellProto();
+                    if (spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN && spellInfo->SpellIconID == 25)
+                        damagePoint *= ((*itr)->GetModifier()->m_amount + 100) / 100.0f;
+                }
+
                 CastCustomSpell(pVictim,spellId,&damagePoint,NULL,NULL,true,NULL, triggeredByAura);
                 return SPELL_AURA_PROC_OK;                                // no hidden cooldown
             }
@@ -1159,8 +1168,8 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, uint32 d
         return SPELL_AURA_PROC_FAILED;
     }
 
-    // not allow proc extra attack spell at extra attack
-    if (m_extraAttacks && IsSpellHaveEffect(triggerEntry, SPELL_EFFECT_ADD_EXTRA_ATTACKS))
+    // not allow proc extra attack spell at extra attack except Reckoning (can stack up 4 times)
+    if (m_extraAttacks && IsSpellHaveEffect(triggerEntry, SPELL_EFFECT_ADD_EXTRA_ATTACKS) && trigger_spell_id != 20178)
         return SPELL_AURA_PROC_FAILED;
 
     // Custom basepoints/target for exist spell
@@ -1188,6 +1197,9 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, uint32 d
         case 14157: // Ruthlessness
         {
             // Need add combopoint AFTER finishing move (or they get dropped in finish phase)
+            if (!pVictim || pVictim == this)
+                return SPELL_AURA_PROC_FAILED;
+
             if (Spell* spell = GetCurrentSpell(CURRENT_GENERIC_SPELL))
             {
                 spell->AddTriggeredSpell(trigger_spell_id);
@@ -1291,8 +1303,10 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, uint3
             break;
         }
         case 4309:                                          // Nightfall
+        {
             triggered_spell_id = 17941;
             break;
+        }
         case 4533:                                          // Dreamwalker Raiment 2 pieces bonus
         {
             // Chance 50%
