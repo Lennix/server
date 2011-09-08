@@ -1865,7 +1865,7 @@ void Player::RewardRage( uint32 damage, uint32 weaponSpeedHitFactor, bool attack
 
     if(attacker)
     {
-        addRage = 2*damage/getLevel();
+        addRage = (damage/rageconversion)*7.5f;
     }
     else
     {
@@ -4615,7 +4615,7 @@ float Player::GetTotalBaseModValue(BaseModGroup modGroup) const
 
 uint32 Player::GetShieldBlockValue() const
 {
-    float value = (m_auraBaseMod[SHIELD_BLOCK_VALUE][FLAT_MOD] + GetStat(STAT_STRENGTH)/20 - 1)*m_auraBaseMod[SHIELD_BLOCK_VALUE][PCT_MOD];
+    float value = (m_auraBaseMod[SHIELD_BLOCK_VALUE][FLAT_MOD] + GetStat(STAT_STRENGTH)/2 - 1)*m_auraBaseMod[SHIELD_BLOCK_VALUE][PCT_MOD];
 
     value = (value < 0) ? 0 : value;
 
@@ -4823,7 +4823,7 @@ float Player::OCTRegenMPPerSpirit()
         case CLASS_WARLOCK: addvalue = (Spirit/5 + 15);   break;
     }
 
-    return addvalue;
+    return addvalue/2;
 }
 
 void Player::SetRegularAttackTime()
@@ -6788,22 +6788,7 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
         {
             uint32 proc_spell_id = pEnchant->spellid[s];
 
-            // Flametongue Weapon (Passive), Ranks (used not existed equip spell id in pre-3.x spell.dbc)
-            if (pEnchant->type[s] == ITEM_ENCHANTMENT_TYPE_EQUIP_SPELL)
-            {
-                switch (proc_spell_id)
-                {
-                    case 10400: proc_spell_id =  8026; break; // Rank 1
-                    case 15567: proc_spell_id =  8028; break; // Rank 2
-                    case 15568: proc_spell_id =  8029; break; // Rank 3
-                    case 15569: proc_spell_id = 10445; break; // Rank 4
-                    case 16311: proc_spell_id = 16343; break; // Rank 5
-                    case 16312: proc_spell_id = 16344; break; // Rank 6
-                    default:
-                        continue;
-                }
-            }
-            else if (pEnchant->type[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
+            if (pEnchant->type[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
                 continue;
 
             SpellEntry const *spellInfo = sSpellStore.LookupEntry(proc_spell_id);
@@ -11246,27 +11231,6 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
                     break;
                 case ITEM_ENCHANTMENT_TYPE_EQUIP_SPELL:
                 {
-
-                    // Flametongue Weapon (Passive), Ranks (used not existed equip spell id in pre-3.x spell.dbc)
-                    // See Player::CastItemCombatSpell for workaround implementation
-                    if (enchant_spell_id && apply)
-                    {
-                        switch (enchant_spell_id)
-                        {
-                            case 10400:                     // Rank 1
-                            case 15567:                     // Rank 2
-                            case 15568:                     // Rank 3
-                            case 15569:                     // Rank 4
-                            case 16311:                     // Rank 5
-                            case 16312:                     // Rank 6
-                            case 16313:                     // Rank 7
-                                enchant_spell_id = 0;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-
                     if (enchant_spell_id)
                     {
                         if (apply)
@@ -12550,7 +12514,8 @@ bool Player::SatisfyQuestSkill(Quest const* qInfo, bool msg) const
 
 bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg) const
 {
-    if (getLevel() < qInfo->GetMinLevel())
+    if (getLevel() < qInfo->GetMinLevel() ||
+        (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAG_MAX_LEVEL_LIMIT) && getLevel() > qInfo->GetQuestLevel()))
     {
         if (msg)
             SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
@@ -17935,6 +17900,10 @@ bool Player::IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel /*= NUL
     uint32 racemask  = getRaceMask();
     uint32 classmask = getClassMask();
 
+    // exception to filter out TH axes/maces for shaman
+    if (!isGameMaster() && getClass() == CLASS_SHAMAN && (spell_id == 197 || spell_id == 199))
+        return false;
+
     SkillLineAbilityMapBounds bounds = sSpellMgr.GetSkillLineAbilityMapBounds(spell_id);
     if (bounds.first==bounds.second)
         return true;
@@ -18048,6 +18017,39 @@ void Player::SummonIfPossible(bool agree)
     // expire and auto declined
     if(m_summon_expire < time(NULL))
         return;
+
+    // We should have check requirements for instance enter
+    if (AreaTrigger const* pAt = sObjectMgr.GetMapEntranceTrigger(m_summon_mapid))
+    {
+        uint32 missingLevel = 0;
+        if (getLevel() < pAt->requiredLevel && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_LEVEL))
+            missingLevel = pAt->requiredLevel;
+
+        uint32 missingItem = 0;
+        if (pAt->requiredItem)
+        {
+            if (!HasItemCount(pAt->requiredItem, 1) &&
+                (!pAt->requiredItem2 || !HasItemCount(pAt->requiredItem2, 1)))
+                missingItem = pAt->requiredItem;
+        }
+        else if (pAt->requiredItem2 && !HasItemCount(pAt->requiredItem2, 1))
+            missingItem = pAt->requiredItem2;
+
+        uint32 missingQuest = 0;
+        if (pAt->requiredQuest && !GetQuestRewardStatus(pAt->requiredQuest))
+            missingQuest = pAt->requiredQuest;
+
+        if (missingLevel || missingItem || missingQuest)
+        {
+            if (missingItem)
+                GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_LEVEL_MINREQUIRED_AND_ITEM), pAt->requiredLevel, sObjectMgr.GetItemPrototype(missingItem)->Name1);
+            else if (missingQuest)
+                GetSession()->SendAreaTriggerMessage("%s", pAt->requiredFailedText.c_str());
+            else if (missingLevel)
+                GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_LEVEL_MINREQUIRED), missingLevel);
+            return;
+        }
+    }
 
     // stop taxi flight at summon
     if(IsTaxiFlying())
