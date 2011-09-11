@@ -2058,6 +2058,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool m_LavaActive;
         uint32 m_LavaTimer;
+        uint32 m_RocketBootsTimer;
 
     protected:
 
