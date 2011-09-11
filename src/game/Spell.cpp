@@ -5073,6 +5073,15 @@ SpellCastResult Spell::CheckRange(bool strict)
             return SPELL_FAILED_UNIT_NOT_INFRONT;
     }
 
+    // Range check for spells that target game objects
+    if (!target && m_targets.getGOTarget())
+    {
+        float dist = m_caster->GetDistance(m_targets.getGOTarget());
+
+        if (dist > max_range)
+            return SPELL_FAILED_OUT_OF_RANGE;
+    }
+
     // TODO verify that such spells really use bounding radius
     if(m_targets.m_targetMask == TARGET_FLAG_DEST_LOCATION && m_targets.m_destX != 0 && m_targets.m_destY != 0 && m_targets.m_destZ != 0)
     {
@@ -5721,6 +5730,10 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
         if(((Player*)target)->isGameMaster() && !IsPositiveSpell(m_spellInfo->Id))
             return false;
     }
+
+    // Make spell 22247 used by Suppression Devices in BWL not hit stealthed targets and limit range
+    if (m_spellInfo->Id == 22247 && (target->HasStealthAura() || m_caster->GetDistance(target) > 15.0f))
+        return false;
 
     // Check targets for LOS visibility (except spells without range limitations )
     switch(m_spellInfo->Effect[eff])

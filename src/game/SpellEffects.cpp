@@ -1871,7 +1871,10 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype, LockType lockType)
             case GAMEOBJECT_TYPE_TRAP:
                 if (lockType == LOCKTYPE_DISARM_TRAP)
                 {
-                    gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);
+                    if (gameObjTarget->GetEntry() == 179784)      // Exception for Suppression Devices in BWL
+                        gameObjTarget->SetGoState(GO_STATE_ACTIVE);
+                    else
+                        gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);
                     return;
                 }
                 sLog.outError("Spell::SendLoot unhandled locktype %u for GameObject trap (entry %u) for spell %u.", lockType, gameObjTarget->GetEntry(), m_spellInfo->Id);
