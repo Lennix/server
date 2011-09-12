@@ -869,6 +869,9 @@ void World::SetInitialWorldSettings()
     DetectDBCLang();
     sObjectMgr.SetDBCLocaleIndex(GetDefaultDbcLocale());    // Get once for all the locale index of DBC language (console/broadcasts)
 
+    sLog.outString( "Loading Spell Corections...");
+    sSpellMgr.LoadDbcDataCorrections();
+
     sLog.outString( "Loading Script Names...");
     sScriptMgr.LoadScriptNames();
 
@@ -927,6 +930,9 @@ void World::SetInitialWorldSettings()
 
     sLog.outString( "Loading Spell Proc Item Enchant..." );
     sSpellMgr.LoadSpellProcItemEnchant();                   // must be after LoadSpellChains
+
+    sLog.outString( "Loading Spell Area requirements..." );
+    sSpellMgr.LoadSpellRequireArea();
 
     sLog.outString( "Loading Aggro Spells Definitions...");
     sSpellMgr.LoadSpellThreats();

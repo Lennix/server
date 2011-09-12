@@ -3073,13 +3073,7 @@ void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, SpellCas
                 data << uint32(spellInfo->RequiresSpellFocus);
                 break;
             case SPELL_FAILED_REQUIRES_AREA:
-            /* [-ZERO]    // hardcode areas limitation case
-                switch(spellInfo->Id)
-                {
-                    default:                                    // default case
-                        data << uint32(spellInfo->AreaId);
-                        break;
-                } */
+                data << uint32(sSpellMgr.GetSpellRequireArea(spellInfo->Id));
                 break;
             case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
                 data << uint32(spellInfo->EquippedItemClass);

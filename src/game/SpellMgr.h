@@ -585,6 +585,7 @@ struct SpellThreatEntry
 
 typedef std::map<uint32, uint8> SpellElixirMap;
 typedef std::map<uint32, float> SpellProcItemEnchantMap;
+typedef std::map<uint32, uint32> SpellRequireAreaMap;
 typedef std::map<uint32, SpellThreatEntry> SpellThreatMap;
 
 // Spell script target related declarations (accessed using SpellMgr functions)
@@ -847,6 +848,16 @@ class SpellMgr
             return itr->second;
         }
 
+        // Spell require area
+        uint32 GetSpellRequireArea(uint32 spellid) const
+        {
+            SpellRequireAreaMap::const_iterator itr = mSpellRequireAreaMap.find(spellid);
+            if (itr == mSpellRequireAreaMap.end())
+                return NULL;
+
+            return itr->second;
+        }
+
         static bool IsSpellProcEventCanTriggeredBy( SpellProcEventEntry const * spellProcEvent, uint32 EventProcFlag, SpellEntry const * procSpell, uint32 procFlags, uint32 procExtra);
 
         // Spell bonus data
@@ -1056,6 +1067,7 @@ class SpellMgr
         void CheckUsedSpells(char const* table);
 
         // Loading data at server startup
+        void LoadDbcDataCorrections();
         void LoadSpellChains();
         void LoadSpellLearnSkills();
         void LoadSpellLearnSpells();
@@ -1064,6 +1076,7 @@ class SpellMgr
         void LoadSpellElixirs();
         void LoadSpellProcEvents();
         void LoadSpellProcItemEnchant();
+        void LoadSpellRequireArea();
         void LoadSpellBonuses();
         void LoadSpellTargetPositions();
         void LoadSpellThreats();
@@ -1085,6 +1098,7 @@ class SpellMgr
         SpellThreatMap     mSpellThreatMap;
         SpellProcEventMap  mSpellProcEventMap;
         SpellProcItemEnchantMap mSpellProcItemEnchantMap;
+        SpellRequireAreaMap mSpellRequireAreaMap;
         SpellBonusMap      mSpellBonusMap;
         SkillLineAbilityMap mSkillLineAbilityMap;
         SkillRaceClassInfoMap mSkillRaceClassInfoMap;

@@ -1375,6 +1375,52 @@ void SpellMgr::LoadSpellProcItemEnchant()
     sLog.outString( ">> Loaded %u proc item enchant definitions", count );
 }
 
+void SpellMgr::LoadSpellRequireArea()
+{
+    mSpellRequireAreaMap.clear();                       // need for reload case
+
+    QueryResult* result = WorldDatabase.Query("SELECT entry, area FROM spell_require_area");
+    if (!result)
+    {
+
+        BarGoLink bar(1);
+
+        bar.step();
+
+        sLog.outString();
+        sLog.outString(">> Loaded 0 spell area requirements. DB table `spell_require_area` is empty.");
+        return;
+    }
+
+    BarGoLink bar((int)result->GetRowCount());
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        bar.step();
+
+        uint32 entry = fields[0].GetUInt32();
+        uint32 area = fields[1].GetUInt32();
+
+        SpellEntry const* spellInfo = sSpellStore.LookupEntry(entry);
+
+        if (!spellInfo)
+        {
+            sLog.outErrorDb("Spell %u listed in `spell_require_area` does not exist", entry);
+            continue;
+        }
+
+        mSpellRequireAreaMap[entry] = area;
+
+    } while (result->NextRow());
+
+    delete result;
+
+    sLog.outString();
+    sLog.outString(">> Loaded %u spell area requirements definitions", mSpellRequireAreaMap.size());
+}
+
 struct DoSpellBonuses
 {
     DoSpellBonuses(SpellBonusMap& _spellBonusMap, SpellBonusEntry const& _spellBonus) : spellBonusMap(_spellBonusMap), spellBonus(_spellBonus) {}
@@ -3347,6 +3393,11 @@ void SpellMgr::LoadSpellAreas()
 
 SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spellInfo, uint32 map_id, uint32 zone_id, uint32 area_id, Player const* player)
 {
+    uint32 reqArea = GetSpellRequireArea(spellInfo->Id);
+
+    if (reqArea > 0 && reqArea != zone_id && reqArea != area_id)
+         return SPELL_FAILED_REQUIRES_AREA;
+
     // DB base check (if non empty then must fit at least single for allow)
     SpellAreaMapBounds saBounds = GetSpellAreaMapBounds(spellInfo->Id);
     if (saBounds.first != saBounds.second)
@@ -3378,9 +3429,6 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
             return map_id == 30 && bg
                 && bg->GetStatus() != STATUS_WAIT_JOIN ? SPELL_CAST_OK : SPELL_FAILED_REQUIRES_AREA;
         }
-        case 23333:                                         // Warsong Flag
-        case 23335:                                         // Silverwing Flag
-            return map_id == 489 && player && player->InBattleGround() ? SPELL_CAST_OK : SPELL_FAILED_REQUIRES_AREA;
         case 2584:                                          // Waiting to Resurrect
         {
             return player && player->InBattleGround() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
@@ -4032,4 +4080,37 @@ void SpellMgr::LoadFacingCasterFlags()
 
     sLog.outString();
     sLog.outString(">> Loaded %u facing caster flags", count);
+}
+
+void SpellMgr::LoadDbcDataCorrections()
+{
+    SpellEntry* spellInfo = NULL;
+    for (uint32 i = 0; i < sSpellStore.GetNumRows(); ++i)
+    {
+        spellInfo = (SpellEntry*)sSpellStore.LookupEntry(i);
+        if (!spellInfo)
+            continue;
+
+        switch (spellInfo->Id)
+        {
+            case 13419: // Enchant Cloak - Minor Agility
+                spellInfo->EquippedItemClass = 4;
+                spellInfo->EquippedItemSubClassMask = 31;
+                break;
+            case 17941: // Shadow Trance
+            case 22008: // Netherwind Focus
+                spellInfo->procCharges = 1;
+                break;
+            case 23269: // Holy Blast
+                spellInfo->AttributesEx |= SPELL_ATTR_EX_NO_THREAT;
+                spellInfo->AttributesEx |= SPELL_ATTR_EX_NO_INITIAL_AGGRO;
+                break;
+            case 28200: // Ascendance (Talisman of Ascendance trinket)
+                spellInfo->procCharges = 6;
+                break;
+        }
+    }
+
+    sLog.outString(">> Loading spell dbc data corrections.");
+    sLog.outString();
 }

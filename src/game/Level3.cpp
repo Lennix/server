@@ -158,6 +158,7 @@ bool ChatHandler::HandleReloadAllSpellCommand(char* /*args*/)
     HandleReloadSpellProcEventCommand((char*)"a");
     HandleReloadSpellBonusesCommand((char*)"a");
     HandleReloadSpellProcItemEnchantCommand((char*)"a");
+    HandleReloadSpellRequireAreaCommand((char*)"a");
     HandleReloadSpellScriptTargetCommand((char*)"a");
     HandleReloadSpellTargetPositionCommand((char*)"a");
     HandleReloadSpellThreatsCommand((char*)"a");
@@ -572,6 +573,14 @@ bool ChatHandler::HandleReloadSpellProcItemEnchantCommand(char* /*args*/)
     sLog.outString( "Re-Loading Spell Proc Item Enchant..." );
     sSpellMgr.LoadSpellProcItemEnchant();
     SendGlobalSysMessage("DB table `spell_proc_item_enchant` (item enchantment ppm) reloaded.");
+    return true;
+}
+
+bool ChatHandler::HandleReloadSpellRequireAreaCommand(char* /*args*/)
+{
+    sLog.outString( "Re-Loading Spell Require Area..." );
+    sSpellMgr.LoadSpellRequireArea();
+    SendGlobalSysMessage("DB table `spell_require_area` (spell cast area requirements) reloaded.");
     return true;
 }
 
