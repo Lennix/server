@@ -64,7 +64,7 @@ enum SpellSpecific
     SPELL_POSITIVE_SHOUT    = 12,
     SPELL_JUDGEMENT         = 13,
     SPELL_BATTLE_ELIXIR     = 14,
-    SPELL_GUARDIAN_ELIXIR   = 15,
+    SPELL_ZANZA_ELIXIR      = 15,
     SPELL_FLASK_ELIXIR      = 16,
     //SPELL_PRESENCE          = 17,                         // used in 3.x
     //SPELL_HAND              = 18,                         // used in 3.x
@@ -361,7 +361,7 @@ inline bool IsDispelSpell(SpellEntry const *spellInfo)
 
 inline bool isSpellBreakStealth(SpellEntry const* spellInfo)
 {
-    return !(spellInfo->AttributesEx & SPELL_ATTR_EX_NOT_BREAK_STEALTH);
+    return ((spellInfo->AttributesEx & SPELL_ATTR_EX_STEALTH) ? false : !(spellInfo->AttributesEx & SPELL_ATTR_EX_NOT_BREAK_STEALTH));
 }
 
 inline bool IsAutoRepeatRangedSpell(SpellEntry const* spellInfo)
@@ -573,6 +573,7 @@ struct SpellBonusEntry
 typedef UNORDERED_MAP<uint32, SpellProcEventEntry> SpellProcEventMap;
 typedef UNORDERED_MAP<uint32, SpellBonusEntry>     SpellBonusMap;
 
+#define ELIXIR_ZANZA_MASK     0x02
 #define ELIXIR_FLASK_MASK     0x03                          // 2 bit mask for batter compatibility with more recent client version, flaks must have both bits set
 #define ELIXIR_WELL_FED       0x10                          // Some foods have SPELLFAMILY_POTION
 
@@ -803,6 +804,8 @@ class SpellMgr
             // flasks must have all bits set from ELIXIR_FLASK_MASK
             if((mask & ELIXIR_FLASK_MASK)==ELIXIR_FLASK_MASK)
                 return SPELL_FLASK_ELIXIR;
+			else if (mask & ELIXIR_ZANZA_MASK)
+                return SPELL_ZANZA_ELIXIR;
             else if(mask & ELIXIR_WELL_FED)
                 return SPELL_WELL_FED;
             else
