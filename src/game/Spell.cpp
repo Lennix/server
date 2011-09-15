@@ -2260,6 +2260,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case SPELL_EFFECT_SUMMON_OBJECT_WILD:
                 case SPELL_EFFECT_SELF_RESURRECT:
                 case SPELL_EFFECT_REPUTATION:
+                case SPELL_EFFECT_REPUTATION_2:
                 case SPELL_EFFECT_ADD_HONOR:
                 case SPELL_EFFECT_SEND_TAXI:
                     if (m_targets.getUnitTarget())
