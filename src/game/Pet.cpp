@@ -1099,9 +1099,9 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 
     SetModifierValue(UNIT_MOD_ARMOR, BASE_VALUE, float(petlevel*50));
 
-    SetAttackTime(BASE_ATTACK, BASE_ATTACK_TIME);
-    SetAttackTime(OFF_ATTACK, BASE_ATTACK_TIME);
-    SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
+    SetAttackTime(BASE_ATTACK, cinfo->baseattacktime);
+    SetAttackTime(OFF_ATTACK, cinfo->baseattacktime);
+    SetAttackTime(RANGED_ATTACK, cinfo->rangeattacktime);
 
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0);
 
@@ -1880,6 +1880,17 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
 {
     if(IsPassiveSpell(spellid))
         return;
+
+	// Sacrifice is not autocastable
+    switch (spellid) {
+		case 7812:
+		case 19438:
+		case 19440:
+		case 19441:
+		case 19442:
+		case 19443:
+			return;
+    }
 
     PetSpellMap::iterator itr = m_spells.find(spellid);
 
