@@ -834,8 +834,8 @@ void Pet::UpdateAttackPowerAndDamage(bool ranged)
             int32 maximum  = (fire > shadow) ? fire : shadow;
             if(maximum < 0)
                 maximum = 0;
-            SetBonusDamage( int32(maximum * 0.15f));
-            bonusAP = maximum * 0.57f;
+            SetBonusDamage( int32(maximum * 0.0f));
+            bonusAP = maximum * 0.0f;
         }
         //water elementals benefit from mage's frost damage
         else if(getPetType() == SUMMON_PET && owner->getClass() == CLASS_MAGE)
