@@ -12317,7 +12317,8 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     QuestStatusData& q_status = mQuestStatus[quest_id];
 
     // Not give XP in case already completed once repeatable quest
-    uint32 XP = q_status.m_rewarded ? 0 : uint32(pQuest->XPValue(this)*sWorld.getConfig(CONFIG_FLOAT_RATE_XP_QUEST));
+    //uint32 XP = q_status.m_rewarded ? 0 : uint32(pQuest->XPValue(this)*sWorld.getConfig(CONFIG_FLOAT_RATE_XP_QUEST));
+	uint32 XP = q_status.m_rewarded ? 0 : uint32(pQuest->XPValue( this )*GetRates());
 
     if (getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
         GiveXP(XP , NULL);
@@ -13550,8 +13551,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
     //"honor_highest_rank, honor_standing, stored_honor_rating, stored_dishonorablekills, stored_honorable_kills,"
     // 43               44
     //"watchedFaction,  drunk,"
-    // 45      46      47      48      49      50      51             52              53      54
-    //"health, power1, power2, power3, power4, power5, exploredZones, equipmentCache, ammoId, actionBars  FROM characters WHERE guid = '%u'", GUID_LOPART(m_guid));
+    // 45      46      47      48      49      50      51             52              53      54		  55
+    //"health, power1, power2, power3, power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates  FROM characters WHERE guid = '%u'", GUID_LOPART(m_guid));
     QueryResult *result = holder->GetResult(PLAYER_LOGIN_QUERY_LOADFROM);
 
     if(!result)
@@ -13626,6 +13627,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
     // Action bars state
     SetByteValue(PLAYER_FIELD_BYTES, 2, fields[54].GetUInt8());
+
+	SetRates(fields[55].GetFloat());
 
     // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for(uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
@@ -15052,7 +15055,7 @@ void Player::SaveToDB()
         "death_expire_time, taxi_path, "
         "honor_highest_rank, honor_standing, stored_honor_rating , stored_dishonorable_kills, stored_honorable_kills, "
         "watchedFaction, drunk, health, power1, power2, power3, "
-        "power4, power5, exploredZones, equipmentCache, ammoId, actionBars) "
+        "power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates) "
         "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
         "?, ?, ?, ?, ?, "
         "?, ?, ?, "
@@ -15061,7 +15064,7 @@ void Player::SaveToDB()
         "?, ?, "
         "?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, "
-        "?, ?, ?, ?, ?, ?) ");
+        "?, ?, ?, ?, ?, ?, ?) ");
 
     uberInsert.addUInt32(GetGUIDLow());
     uberInsert.addUInt32(GetSession()->GetAccountId());
@@ -15169,6 +15172,8 @@ void Player::SaveToDB()
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
 
     uberInsert.addUInt32(uint32(GetByteValue(PLAYER_FIELD_BYTES, 2)));
+
+	uberInsert.addFloat(GetRates());
 
     uberInsert.Execute();
 
