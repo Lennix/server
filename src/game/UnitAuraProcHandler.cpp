@@ -647,17 +647,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                 mod->m_amount-=damage;
                 return SPELL_AURA_PROC_OK;
             }
-            switch(dummySpell->Id)
-            {
-                // Nightfall
-                case 18094:
-                case 18095:
-                {
-                    target = this;
-                    triggered_spell_id = 17941;
-                    break;
-                }
-            }
             break;
         }
         case SPELLFAMILY_PRIEST:
@@ -1321,6 +1310,16 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, uint3
             triggered_spell_id = 28750;                     // Blessing of the Claw
             break;
     }
+
+	switch (triggeredByAura->GetId())
+	{
+		case 18094:                                        //Warlock's Nightfall rank 1
+			triggered_spell_id = 17941;
+			break;
+		case 18095:                                        //rank 2
+			triggered_spell_id = 17941;
+			break;
+	}
 
     // not processed
     if(!triggered_spell_id)
