@@ -210,7 +210,7 @@ namespace MaNGOS
 
         inline float HonorableKillPoints( Player *killer, Player *victim, uint32 groupsize)
         {
-            if (!killer || !victim || !groupsize)
+            if (!killer || !victim || !groupsize || (groupsize > 0 && groupsize < 1))
                 return 0.0;
 
             uint32 today = sWorld.GetDateToday();
