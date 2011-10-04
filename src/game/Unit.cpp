@@ -5382,7 +5382,49 @@ uint32 Unit::SpellDamageBonusTaken(Unit *pCaster, SpellEntry const *spellProto, 
     TakenTotalMod *= GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN, schoolMask);
 
     // Taken fixed damage bonus auras
+	// Check if victim auras must be modified depending on the spell
+	
+	Aura* A = 0;     	
+	int32 saveAuraMod = 0;	
+	if (schoolMask & SPELL_SCHOOL_MASK_HOLY) {                          //Judgement of the Crusader	
+    A = GetAura(SPELL_AURA_MOD_DAMAGE_TAKEN, SPELLFAMILY_PALADIN, 536870912);	
+    if (A) {	
+    saveAuraMod = A->GetModifier()->m_amount;	
+    switch (spellProto->SpellIconID) {	
+      case 561:                                                     	
+        if (spellProto->SpellFamilyFlags.Flags == 33554432)       //Seal of Command proc: 21% of maximum applied	
+          A->GetModifier()->m_amount *= 0.21;	
+        else                            //Judgement of Command: 43% of maximum applied	
+          A->GetModifier()->m_amount *= 0.43;	
+        break;	
+      case 25:                                                      	
+        if (spellProto->SpellFamilyFlags.Flags == 134217728)      //Seal of Righteousness proc: 10% of maximum applied	
+          A->GetModifier()->m_amount *= 0.10;	
+        else                                //Judgement of Righteousness: 59% of maximum applied	
+          A->GetModifier()->m_amount *= 0.59;	
+        break;	
+      case 292:                              //Exorcism: 43% of maximum applied	
+        A->GetModifier()->m_amount *= 0.43;	
+        break;	
+      case 156:                              //Holy Shock: 43% of maximum applied	
+        A->GetModifier()->m_amount *= 0.43;	
+        break;	
+      case 51:                            //Consecration: 33% of maximum applied	
+        A->GetModifier()->m_amount *= 0.33;	
+        break;	
+      case 158:                                //Holy Wrath: 19% of maximum applied	
+        A->GetModifier()->m_amount *= 0.19;	
+        break;	
+      default:	
+        break;
+    }	
+    }	
+  }
+
     int32 TakenAdvertisedBenefit = SpellBaseDamageBonusTaken(GetSpellSchoolMask(spellProto));
+
+	if (A)	
+      A->GetModifier()->m_amount = saveAuraMod;
 
     // apply benefit affected by spell power implicit coeffs and spell level penalties
     TakenTotal = SpellBonusWithCoeffs(spellProto, TakenTotal, TakenAdvertisedBenefit, 0, damagetype, false);
