@@ -1751,6 +1751,17 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         case FORM_DIREBEAR:
         case FORM_MOONKIN:
         {
+			//set normal Tauren Scale and Nightelf Scale for Travel Shapeshift if druid form is canceled
+			if(target->getRace() == RACE_TAUREN)
+			{
+				if(target->getGender() == GENDER_MALE)
+					target->SetObjectScale(1.35f);
+				else
+					target->SetObjectScale(1.25f);
+			}
+			else
+				target->SetObjectScale(DEFAULT_OBJECT_SCALE);
+
             // remove movement affects
             target->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT, GetHolder());
             Unit::AuraList const& slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
@@ -1794,7 +1805,26 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         // target->SendForcedObjectUpdate();                -- not need in pre-3.x
 
         if (modelid > 0)
+		{
             target->SetDisplayId(modelid);
+			//Tauren Shapeshifts get a smaller Scale
+			if(target->getRace() == RACE_TAUREN)
+			{
+				switch(modelid)
+				{
+					case 8571:		//Cat
+					case 864:		//Tree
+					case 2428:		//Aqua
+					case 2289:		//Bear_Direbear
+					case 15375:		//Moonkin
+						target->SetObjectScale(DEFAULT_OBJECT_SCALE);
+						break;
+				}
+			}
+			//Travel Scale for Nightelf and Tauren
+			if(modelid == 632)
+				target->SetObjectScale(0.8f);
+		}
 
         if (PowerType != POWER_MANA)
         {
