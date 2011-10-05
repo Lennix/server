@@ -1314,16 +1314,6 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, uint3
             break;
     }
 
-	switch (triggeredByAura->GetId())
-	{
-		case 18094:                                        //Warlock's Nightfall rank 1
-			triggered_spell_id = 17941;
-			break;
-		case 18095:                                        //rank 2
-			triggered_spell_id = 17941;
-			break;
-	}
-
     // not processed
     if(!triggered_spell_id)
         return SPELL_AURA_PROC_OK;
