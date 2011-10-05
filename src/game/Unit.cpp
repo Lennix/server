@@ -5382,12 +5382,68 @@ uint32 Unit::SpellDamageBonusTaken(Unit *pCaster, SpellEntry const *spellProto, 
     TakenTotalMod *= GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN, schoolMask);
 
     // Taken fixed damage bonus auras
+	// Check if victim auras must be modified depending on the spell
+	
+	Aura* A = 0;     	
+	int32 saveAuraMod = 0;	
+	if (schoolMask & SPELL_SCHOOL_MASK_HOLY) {                          //Judgement of the Crusader	
+    A = GetAura(SPELL_AURA_MOD_DAMAGE_TAKEN, SPELLFAMILY_PALADIN, 536870912);	
+    if (A && A->GetModifier()) {	
+      saveAuraMod = A->GetModifier()->m_amount;	
+      A->GetModifier()->m_amount = 0;	
+    }	
+  }
+
     int32 TakenAdvertisedBenefit = SpellBaseDamageBonusTaken(GetSpellSchoolMask(spellProto));
 
     // apply benefit affected by spell power implicit coeffs and spell level penalties
     TakenTotal = SpellBonusWithCoeffs(spellProto, TakenTotal, TakenAdvertisedBenefit, 0, damagetype, false);
 
     float tmpDamage = (int32(pdamage) + TakenTotal * int32(stack)) * TakenTotalMod;
+    if (A && A->GetModifier()) //Apply Judgement of the Crusader bonus after other calculations are done	
+	{	
+	   A->GetModifier()->m_amount = saveAuraMod;	
+	   float coeff = 0.0f;	
+	switch (spellProto->SpellIconID) 	
+    {	
+      case 25:    	
+        if (spellProto->SpellVisual == 5622)    //Seal of Righteousness proc: 10% of maximum applied	
+          coeff = 0.1f;	
+        else                    //Judgement of Righteousness: 50% of maximum applied	
+          coeff = 0.5f;	
+        break;
+      case 292:                    //Exorcism: 43% of maximum applied	
+      case 302:                    //Hammer of Wrath: 43% of maximum applied	
+        coeff = 0.43f;	
+        break;	
+      case 156:                             	
+        if (spellProto->SpellVisual == 3400)
+        {
+          if (damagetype == DOT)        //Holy Fire DoT: 26% of maximum applied
+          coeff = 0.26f;	
+          else                  //Holy Fire Initial Damage: 32% of maximum applied  	
+          coeff = 0.32f;
+        }
+        else                    //Holy Shock: 43% of maximum applied	
+        coeff = 0.43f;	
+        break;	
+      case 51:                    //Consecration: 33% of maximum applied	
+        coeff = 0.33f;
+        break;	
+      case 158:                    //Holy Wrath: 19% of maximum applied
+        coeff = 0.19f;	
+        break;
+      case 237:                    //Smite: 32% of maximum applied	
+      case 1874:                  //Holy Nova: 32% of maximum applied
+        coeff = 0.32f;
+        break;
+      default:	
+       break;	
+    }
+    if (coeff > 0)
+      tmpDamage += tmpDamage*coeff > saveAuraMod ? saveAuraMod : tmpDamage*coeff;	
+  }
+
 
     return tmpDamage > 0 ? uint32(tmpDamage) : 0;
 }
@@ -5994,6 +6050,17 @@ uint32 Unit::MeleeDamageBonusTaken(Unit *pCaster, uint32 pdamage,WeaponAttackTyp
         TakenFlat += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN);
 
     // ..taken flat (by school mask)
+    // Check if victim auras must be modified depending on the spell
+	
+  Aura* A = 0;     
+  int32 saveAuraMod = 0;	
+  if (schoolMask & SPELL_SCHOOL_MASK_HOLY) {                          //Judgement of the Crusader	
+    A = GetAura(SPELL_AURA_MOD_DAMAGE_TAKEN, SPELLFAMILY_PALADIN, 536870912);	
+    if (A && A->GetModifier()) {	
+      saveAuraMod = A->GetModifier()->m_amount;	
+      A->GetModifier()->m_amount = 0;	
+    }	
+  }
     TakenFlat += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_DAMAGE_TAKEN, schoolMask);
 
     // PERCENT damage auras
@@ -6020,6 +6087,19 @@ uint32 Unit::MeleeDamageBonusTaken(Unit *pCaster, uint32 pdamage,WeaponAttackTyp
     }
 
     float tmpDamage = float(int32(pdamage) + TakenFlat * int32(stack)) * TakenPercent;
+
+  if (A && A->GetModifier())  //Apply Judgement of the Crusader bonus after other calculations are done	
+  {	
+    A->GetModifier()->m_amount = saveAuraMod;	
+    if (spellProto->SpellIconID == 561) 	
+    {       
+      if (spellProto->SpellVisual == 5622)          //Seal of Command proc: 29% of maximum applied	
+        tmpDamage += tmpDamage*0.29 > saveAuraMod ? saveAuraMod : tmpDamage*0.29;	
+      else                          //Judgement of Command: 43% of maximum applied	
+        tmpDamage += tmpDamage*0.43 > saveAuraMod ? saveAuraMod : tmpDamage*0.43;	
+    }	
+  }	
+
 
     // bonus result can be negative
     return tmpDamage > 0 ? uint32(tmpDamage) : 0;
@@ -6963,11 +7043,13 @@ void Unit::TauntApply(Unit* taunter)
 
     if (target && target == taunter)
         return;
+	if (!HasAuraType(SPELL_AURA_MOD_FEAR) && !HasAuraType(SPELL_AURA_MOD_CONFUSE))	
+	{
+		SetInFront(taunter);
 
-    SetInFront(taunter);
-
-    if (((Creature*)this)->AI())
-        ((Creature*)this)->AI()->AttackStart(taunter);
+		if (((Creature*)this)->AI())
+			((Creature*)this)->AI()->AttackStart(taunter);
+	}
 
     m_ThreatManager.tauntApply(taunter);
 }
@@ -7003,7 +7085,7 @@ void Unit::TauntFadeOut(Unit *taunter)
     m_ThreatManager.tauntFadeOut(taunter);
     target = m_ThreatManager.getHostileTarget();
 
-    if (target && target != taunter)
+    if (target && target != taunter && !HasAuraType(SPELL_AURA_MOD_FEAR) && !HasAuraType(SPELL_AURA_MOD_CONFUSE))
     {
         SetInFront(target);
 
@@ -7065,8 +7147,9 @@ bool Unit::SelectHostileTarget()
         target = m_ThreatManager.getHostileTarget();
 
     if (target)
-    {
-        if (!hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_DIED))
+    {        
+        if (!hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_DIED)	
+		&& !HasAuraType(SPELL_AURA_MOD_FEAR) && !HasAuraType(SPELL_AURA_MOD_CONFUSE)) //Prevent unit from attacking while feared/confused 
         {
             SetInFront(target);
             ((Creature*)this)->AI()->AttackStart(target);
@@ -8128,10 +8211,10 @@ void Unit::ProcDamageAndSpellFor( bool isVictim, Unit * pTarget, uint32 procFlag
                             continue;
                     }
                     // don't check dbc FamilyFlags if schoolMask exists
-                    else if (!triggeredByAura->CanProcFrom(procSpell, spellProcEvent->procEx, procExtra, damage != 0, !spellProcEvent->schoolMask))
+                    else if (!triggeredByAura->CanProcFrom(procSpell, spellProcEvent->procEx, procExtra, damage != 0 || (procExtra & PROC_EX_ABSORB), !spellProcEvent->schoolMask))
                         continue;
                 }
-                else if (!triggeredByAura->CanProcFrom(procSpell, PROC_EX_NONE, procExtra, damage != 0, true))
+                else if (!triggeredByAura->CanProcFrom(procSpell, PROC_EX_NONE, procExtra, damage != 0 || (procExtra & PROC_EX_ABSORB), true))
                     continue;
             }
 
