@@ -651,6 +651,7 @@ bool Player::Create( uint32 guidlow, const std::string& name, uint8 race, uint8 
 
 	// rates
 	SetRates(3);
+	SetRatesMax(3);
 
     // base stats and related field values
     InitStatsForLevel();
@@ -13548,8 +13549,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
     //"honor_highest_rank, honor_standing, stored_honor_rating, stored_dishonorablekills, stored_honorable_kills,"
     // 43               44
     //"watchedFaction,  drunk,"
-    // 45      46      47      48      49      50      51             52              53      54		  55
-    //"health, power1, power2, power3, power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates  FROM characters WHERE guid = '%u'", GUID_LOPART(m_guid));
+    // 45      46      47      48      49      50      51             52              53      54          55     56
+    //"health, power1, power2, power3, power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates, ratesMax  FROM characters WHERE guid = '%u'", GUID_LOPART(m_guid));
     QueryResult *result = holder->GetResult(PLAYER_LOGIN_QUERY_LOADFROM);
 
     if(!result)
@@ -13626,6 +13627,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
     SetByteValue(PLAYER_FIELD_BYTES, 2, fields[54].GetUInt8());
 
 	SetRates(fields[55].GetFloat());
+	SetRatesMax(fields[56].GetFloat());
 
     // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for(uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
@@ -15052,7 +15054,7 @@ void Player::SaveToDB()
         "death_expire_time, taxi_path, "
         "honor_highest_rank, honor_standing, stored_honor_rating , stored_dishonorable_kills, stored_honorable_kills, "
         "watchedFaction, drunk, health, power1, power2, power3, "
-        "power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates) "
+        "power4, power5, exploredZones, equipmentCache, ammoId, actionBars, rates, ratesMax) "
         "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
         "?, ?, ?, ?, ?, "
         "?, ?, ?, "
@@ -15061,7 +15063,7 @@ void Player::SaveToDB()
         "?, ?, "
         "?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, "
-        "?, ?, ?, ?, ?, ?, ?) ");
+        "?, ?, ?, ?, ?, ?, ?,?) ");
 
     uberInsert.addUInt32(GetGUIDLow());
     uberInsert.addUInt32(GetSession()->GetAccountId());
@@ -15171,6 +15173,8 @@ void Player::SaveToDB()
     uberInsert.addUInt32(uint32(GetByteValue(PLAYER_FIELD_BYTES, 2)));
 
 	uberInsert.addFloat(GetRates());
+
+	uberInsert.addFloat(GetRatesMax());
 
     uberInsert.Execute();
 

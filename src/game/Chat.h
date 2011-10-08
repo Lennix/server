@@ -134,6 +134,7 @@ class MANGOS_DLL_SPEC ChatHandler
 
 		// Rates
 		bool HandleRatesCommand(char* args);
+		bool HandleRatesMaxCommand(char* args);
 
         bool HandleAccountCommand(char* args);
         bool HandleAccountCharactersCommand(char* args);

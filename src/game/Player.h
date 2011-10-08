@@ -924,9 +924,11 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetGMVisible(bool on);
         void SetPvPDeath(bool on) { if(on) m_ExtraFlags |= PLAYER_EXTRA_PVP_DEATH; else m_ExtraFlags &= ~PLAYER_EXTRA_PVP_DEATH; }
 
-		float m_rates;
+		float m_rates, m_ratesMax;
 		float GetRates() const { return m_rates; }
+		float GetRatesMax() const { return m_ratesMax; }
 		void SetRates(float rates) { m_rates = rates; }
+		void SetRatesMax(float rates) { m_ratesMax = rates; }
 
         // 0 = own auction, -1 = enemy auction, 1 = goblin auction
         int GetAuctionAccessMode() const { return m_ExtraFlags & PLAYER_EXTRA_AUCTION_ENEMY ? -1 : (m_ExtraFlags & PLAYER_EXTRA_AUCTION_NEUTRAL ? 1 : 0); }

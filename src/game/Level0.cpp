@@ -302,9 +302,10 @@ bool ChatHandler::HandleRatesCommand(char* args)
 	{
 		float rate = (float)atof(args);
 
-		if(rate < 0.0f || rate > sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL))
+		//if(rate < 0.0f || rate > sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL))
+		if(rate < 0.0f || rate > m_session->GetPlayer()->GetRatesMax())
 		{
-			PSendSysMessage("Please choose rates between 0 and %f", sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL));
+			PSendSysMessage("Please choose rates between 0 and %f", m_session->GetPlayer()->GetRatesMax());
 			return false;
 		}
 		m_session->GetPlayer()->SetRates(rate);

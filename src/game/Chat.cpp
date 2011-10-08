@@ -709,7 +709,8 @@ ChatCommand * ChatHandler::getCommandTable()
         { "stable",         SEC_ADMINISTRATOR,  false, &ChatHandler::HandleStableCommand,              "", NULL },
         { "waterwalk",      SEC_GAMEMASTER,     false, &ChatHandler::HandleWaterwalkCommand,           "", NULL },
         { "quit",           SEC_CONSOLE,        true,  &ChatHandler::HandleQuitCommand,                "", NULL },
-		{ "rates",          SEC_PLAYER,         false, &ChatHandler::HandleRatesCommand,                "", NULL },
+		{ "rates",          SEC_PLAYER,         false, &ChatHandler::HandleRatesCommand,               "", NULL },
+		{ "ratesmax",       SEC_CONSOLE,        true,  &ChatHandler::HandleRatesMaxCommand,            "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
