@@ -2142,9 +2142,6 @@ bool ChatHandler::HandleRatesMaxCommand(char* args)
 			if (ExtractFloat(&args, rates))
 			{
 				target->SetRatesMax(rates);
-				if(target->GetRates() > rates)
-					target->SetRates(rates);
-
 				fRet = true;
 			}
 		}

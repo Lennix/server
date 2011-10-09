@@ -2256,6 +2256,13 @@ void Player::RemoveFromGroup(Group* group, ObjectGuid guid)
     }
 }
 
+void Player::SetRatesMax(float rates)
+{
+	m_ratesMax = rates;
+	if(GetRates() > m_ratesMax)
+		SetRates(m_ratesMax);
+}
+
 void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 RestXP)
 {
     WorldPacket data(SMSG_LOG_XPGAIN, 21);
@@ -13628,8 +13635,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
 	SetRates(fields[55].GetFloat());
 	SetRatesMax(fields[56].GetFloat());
-	if(GetRates() > GetRatesMax())
-		SetRates(GetRatesMax());
 
     // cleanup inventory related item value fields (its will be filled correctly in _LoadInventory)
     for(uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
