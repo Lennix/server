@@ -649,9 +649,9 @@ bool Player::Create( uint32 guidlow, const std::string& name, uint8 race, uint8 
     m_Played_time[PLAYED_TIME_TOTAL] = 0;
     m_Played_time[PLAYED_TIME_LEVEL] = 0;
 
-	// rates
-	SetRates(3);
-	SetRatesMax(3);
+	// rates (get values from config)
+	SetRates(sWorld.getConfig(CONFIG_FLOAT_RATE_XP_KILL));
+	SetRatesMax(sWorld.getConfig(CONFIG_FLOAT_RATE_XP_QUEST));
 
     // base stats and related field values
     InitStatsForLevel();
