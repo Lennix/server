@@ -297,7 +297,7 @@ bool ChatHandler::HandleServerMotdCommand(char* /*args*/)
 bool ChatHandler::HandleRatesCommand(char* args)
 {
 	if(!*args)
-		PSendSysMessage("Current rates: %f",m_session->GetPlayer()->GetRates());
+		PSendSysMessage("Your current rates: %f. You may choose between 0 and %f",m_session->GetPlayer()->GetRates(), m_session->GetPlayer()->GetRatesMax());
 	else
 	{
 		float rate = (float)atof(args);
