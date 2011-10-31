@@ -4668,7 +4668,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (m_targets.getUnitTarget()->GetCharmerGuid())
                     return SPELL_FAILED_CHARMED;
 
-                if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(SpellEffectIndex(i),m_targets.getUnitTarget()))
+                if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(SpellEffectIndex(i),m_targets.getUnitTarget())
+					|| int32(m_targets.getUnitTarget()->getLevel()) > 62)
                     return SPELL_FAILED_HIGHLEVEL;
 
                 break;
@@ -4693,7 +4694,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (m_targets.getUnitTarget()->GetCharmerGuid())
                     return SPELL_FAILED_CHARMED;
 
-                if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(SpellEffectIndex(i),m_targets.getUnitTarget()))
+                if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(SpellEffectIndex(i),m_targets.getUnitTarget())
+					|| int32(m_targets.getUnitTarget()->getLevel()) > 62)
                     return SPELL_FAILED_HIGHLEVEL;
 
                 break;
