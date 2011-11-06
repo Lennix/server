@@ -5237,6 +5237,9 @@ SpellCastResult Spell::CheckItems()
     // cast item checks
     if(m_CastItem)
     {
+		if (m_CastItem->GetSlot() == NULL_SLOT)
+			return SPELL_FAILED_ITEM_GONE;
+
         if (m_CastItem->IsInTrade())
             return SPELL_FAILED_ITEM_GONE;
 
