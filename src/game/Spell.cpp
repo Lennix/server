@@ -4609,12 +4609,14 @@ SpellCastResult Spell::CheckCast(bool strict)
                 // check if our map is dungeon
                 if( sMapStore.LookupEntry(m_caster->GetMapId())->IsDungeon() )
                 {
-                    InstanceTemplate const* instance = ObjectMgr::GetInstanceTemplate(m_caster->GetMapId());
-                    if(!instance)
+                    // Caster instance and target instance
+                    InstanceTemplate const* instanceCaster = ObjectMgr::GetInstanceTemplate(m_caster->GetMapId());
+                    InstanceTemplate const* instanceTarget = ObjectMgr::GetInstanceTemplate(target->GetMapId());
+                    if(!instanceCaster || !instanceTarget || m_caster->GetMapId() != target->GetMapId())
                         return SPELL_FAILED_TARGET_NOT_IN_INSTANCE;
-                    if ( instance->levelMin > target->getLevel() )
+                    if ( instanceCaster->levelMin > target->getLevel() )
                         return SPELL_FAILED_LOWLEVEL;
-                    if ( instance->levelMax && instance->levelMax < target->getLevel() )
+                    if ( instanceCaster->levelMax && instanceCaster->levelMax < target->getLevel() )
                         return SPELL_FAILED_HIGHLEVEL;
                 }
                 break;
