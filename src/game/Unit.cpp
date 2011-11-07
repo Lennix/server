@@ -560,8 +560,9 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
     if(!damage)
     {
         // Rage from physical damage received .
-        if(cleanDamage && cleanDamage->damage && (damageSchoolMask & SPELL_SCHOOL_MASK_NORMAL) && pVictim->GetTypeId() == TYPEID_PLAYER && (pVictim->getPowerType() == POWER_RAGE))
-            ((Player*)pVictim)->RewardRage(cleanDamage->damage, 0, false);
+        // ?? No dmg done, why reward rage ??
+        //if(cleanDamage && cleanDamage->damage && (damageSchoolMask & SPELL_SCHOOL_MASK_NORMAL) && pVictim->GetTypeId() == TYPEID_PLAYER && (pVictim->getPowerType() == POWER_RAGE))
+        //   ((Player*)pVictim)->RewardRage(cleanDamage->damage, 0, false);
 
         return 0;
     }
@@ -1698,7 +1699,8 @@ void Unit::DealMeleeDamage(CalcDamageInfo *damageInfo, bool durabilityLoss)
     if (!(damageInfo->HitInfo & HITINFO_MISS))
     {
         // on weapon hit casts
-        if(GetTypeId() == TYPEID_PLAYER && pVictim->isAlive())
+        if(GetTypeId() == TYPEID_PLAYER && pVictim->isAlive()
+        && ((damageInfo->procEx & PROC_EX_NORMAL_HIT) || (damageInfo->procEx & PROC_EX_CRITICAL_HIT)))
             ((Player*)this)->CastItemCombatSpell(pVictim, damageInfo->attackType);
 
         // victim's damage shield
