@@ -63,6 +63,7 @@
 #include "GMTicketMgr.h"
 #include "Util.h"
 #include "CharacterDatabaseCleaner.h"
+#include "CreatureGroups.h"
 
 INSTANTIATE_SINGLETON_1( World );
 
