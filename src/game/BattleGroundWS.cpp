@@ -354,10 +354,10 @@ void BattleGroundWS::EventPlayerClickedOnFlag(Player *Source, GameObject* target
         Source->CastSpell(Source, BG_WS_SPELL_WARSONG_FLAG, true);
     }
 
-	// Lets check which flag was clicked and decide what to do
-	GameObject *obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid(Source->GetTeam()));
-	if(obj && message_id == 0)
+	if(message_id == 0) // There really was a flag drop
 	{
+		// Lets check which flag was clicked and decide what to do
+		GameObject *obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid(Source->GetTeam()));
 		if(obj == target_obj) // Player clicked on his own flag
 		{
 			if (Source->GetTeam() == ALLIANCE)
