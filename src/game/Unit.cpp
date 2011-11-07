@@ -929,10 +929,7 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
         {
             // Rage from damage received
             if(this != pVictim && pVictim->getPowerType() == POWER_RAGE)
-            {
-                uint32 rage_damage = damage + (cleanDamage ? cleanDamage->damage : 0);
-                ((Player*)pVictim)->RewardRage(rage_damage, 0, false);
-            }
+                ((Player*)pVictim)->RewardRage(damage, 0, false);
 
             // random durability for items (HIT TAKEN)
             if (roll_chance_f(sWorld.getConfig(CONFIG_FLOAT_RATE_DURABILITY_LOSS_DAMAGE)))
@@ -1407,7 +1404,7 @@ void Unit::CalculateMeleeDamage(Unit *pVictim, uint32 damage, CalcDamageInfo *da
         damageInfo->damage = CalcArmorReducedDamage(damageInfo->target, damage);
         damageInfo->cleanDamage += damage - damageInfo->damage;
     }
-        else
+    else
     {
         damageInfo->damage = damage;
         damageInfo->cleanDamage += damage;
