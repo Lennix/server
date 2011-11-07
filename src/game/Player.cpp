@@ -4823,7 +4823,7 @@ float Player::OCTRegenMPPerSpirit()
         case CLASS_WARLOCK: addvalue = (Spirit/5 + 15);   break;
     }
 
-    return addvalue/2;
+    return addvalue;
 }
 
 void Player::SetRegularAttackTime()
